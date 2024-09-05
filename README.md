@@ -1,2 +1,4 @@
 # CSM152B
-Capstone Project Digital Circuit and FPGA Design Lab
+Digital Circuit Design and Analysis, Capstone Project Class.
+Using FPGAs, Digital Design, Vivado, Verilog, Basys3 Board, and more embedded system coomponents.
+C++ programming.
