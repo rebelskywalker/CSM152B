@@ -1,60 +1,68 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
+// Company: [Your Company Name]
+// Engineer: Chris Baker, Rodrigo Gonzalez
 // 
-// Create Date: 04/18/2022 12:27:46 PM
-// Design Name: 
+// Create Date: 04/18/2022
+// Design Name: Traffic Light Controller
 // Module Name: traffic_light_controller
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
+// Project Name: [Project Name]
+// Target Devices: [Target Devices]
+// Tool Versions: [Tool Versions]
 // Description: 
-// 
+// This module controls a traffic light system with multiple states and outputs.
+// It manages traffic lights for both main and side roads, as well as pedestrian walk
+// signals based on sensor inputs and button presses. The system operates with
+// different timing sequences for each traffic light phase and includes a debouncer
+// for the pedestrian walk button.
+//
 // Dependencies: 
-// 
+// This module depends on a clock divider for generating a second-based clock signal
+// and a debouncer module to ensure stable button input.
+//
 // Revision:
 // Revision 0.01 - File Created
 // Additional Comments:
-// 
+// The module includes additional outputs `WalkPressed` and `walk_on` for debugging
+// purposes. These outputs help verify the correct operation of the pedestrian walk
+// signal logic.
 //////////////////////////////////////////////////////////////////////////////////
 
-
 module traffic_light_controller(
-    input clk,
-    input rst,
-    input Sensor,
-    input WalkButton,
-    output reg Gm,
-    output reg Ym,
-    output reg Rm,
-    output reg Gs,
-    output reg Ys,
-    output reg Rs,
-    output reg WalkPressed,
-    output reg walk_on,
-    output reg WalkLamp
+    input clk,            // Input clock signal
+    input rst,            // Input reset signal
+    input Sensor,         // Input sensor signal for detecting vehicles
+    input WalkButton,     // Input pedestrian walk button signal
+    output reg Gm,        // Output main road green light
+    output reg Ym,        // Output main road yellow light
+    output reg Rm,        // Output main road red light
+    output reg Gs,        // Output side road green light
+    output reg Ys,        // Output side road yellow light
+    output reg Rs,        // Output side road red light
+    output reg WalkPressed, // Output indicating walk button was pressed
+    output reg walk_on,    // Output indicating walk signal is active
+    output reg WalkLamp    // Output pedestrian walk signal
 );
-// I recently added the WalkPressed and walk_on as output reg for testing, I also declared them in the basys file for checking led
-// of them when they are set to make sure they are being set. I also tried moving some setting of  = 0 and =1 with those values
-// I also commented out the WalkEn because at some point the WALK state was always occurring without button presses.
 
-
+// Internal signals for timing and state control
 wire seconds_clk;
+wire WalkEn;
 
+// Instantiate clock divider to generate a second-based clock
 clock_divider sec_clk (
     .clk(clk),
     .rst(rst),
     .seconds_clk(seconds_clk)
 );
 
-wire WalkEn;
+// Instantiate debouncer for the walk button
 debouncer deb (
     .WalkButton(WalkButton),
     .clk(clk),
     .WalkEn(WalkEn)
 );
 
+// Define state encoding for the traffic light controller
 parameter INIT = 4'b0000;
 parameter GMI = 4'b0001;
 parameter YM = 4'b0010;
@@ -65,164 +73,68 @@ parameter GME = 4'b1000;
 parameter WALK = 4'b1001;
 parameter GSE = 4'b1010;
 
-//reg WalkPressed;
-//reg walk_on;
+// Internal registers for state management and timing counters
 reg [3:0] cur_state = INIT;
 reg [3:0] next_state;
-
 reg [4:0] init_counter;
 reg [3:0] green_counter;
 reg [2:0] yellow_counter;
 reg [2:0] walk_counter;
 reg [2:0] extended_counter;
 
-always @ (*)//(clk, cur_state, rst, Sensor, WalkEn, init_counter, green_counter, yellow_counter, walk_counter, extended_counter)
+// State transition logic
+always @(*)
 begin
-
-    //if (WalkEn)
-    //    WalkPressed <= 1;
-    //    walk_on <= 1;
     if (WalkButton)
     begin
-        walk_on <= 1; 
+        walk_on <= 1;
         WalkPressed <= 1;
     end
     case(cur_state)
         INIT:
-            if (rst)
-                next_state <= INIT;
-            else
-                next_state <= GMI;
+            next_state <= (rst) ? INIT : GMI;
         GMI:
-            if (rst)
-                next_state <= INIT;
-            else
-            // We had to change the assignment of counter to 0, since it could not happen simultaneously
-            //Race condition for exiting this block
-            begin
-                if (init_counter == 11)
-                begin
-                    next_state <= YM;
-                end
-                else
-                    next_state <= GMI;
-            end
+            next_state <= (rst) ? INIT :
+                (init_counter == 11) ? YM : GMI;
         YM:
-            if (rst)
-                next_state <= INIT;
-            else
-            begin
-                if (yellow_counter == 1)
-                begin
-                    if (WalkPressed | walk_on)
-                        next_state <= WALK;
-                    else
-                        next_state <= GS;
-                end
-                else
-                    next_state <= YM;
-            end
+            next_state <= (rst) ? INIT :
+                (yellow_counter == 1) ?
+                ((WalkPressed | walk_on) ? WALK : GS) : YM;
         GS:
-            if (rst)
-                next_state <= INIT;
-            else
-            begin
-                //yellow_counter <= 0;
-                //walk_counter <= 0;
-                if (green_counter == 5)
-                begin
-                    if (Sensor)
-                        next_state <= GSE;
-                    else
-                        next_state <= YS;
-                end
-                else
-                    next_state <= GS;
-            end
+            next_state <= (rst) ? INIT :
+                (green_counter == 5) ?
+                (Sensor ? GSE : YS) : GS;
         GSE:
-            if (rst)
-                next_state <= INIT;
-            else
-            begin
-                if (extended_counter == 2)
-                begin
-                    next_state <= YS;
-                end
-                else
-                    next_state <= GSE;
-            end
+            next_state <= (rst) ? INIT :
+                (extended_counter == 2) ? YS : GSE;
         YS:
-            if (rst)
-                next_state <= INIT;
-            else
-            begin
-                //green_counter <= 0;
-                //extended_counter <= 0;
-                if (yellow_counter == 1)
-                begin
-                    next_state <= GMA;
-                end
-                else
-                    next_state <= YS;
-            end
+            next_state <= (rst) ? INIT :
+                (yellow_counter == 1) ? GMA : YS;
         GMA:
-            if (rst)
-                next_state <= INIT;
-            else
-            begin
-                //yellow_counter <= 0;
-                if (green_counter == 5)
-                begin
-                    if (Sensor)
-                        next_state <= GME;
-                    else
-                        next_state <= YM;
-                end
-                else
-                    next_state <= GMA;
-            end
+            next_state <= (rst) ? INIT :
+                (green_counter == 5) ?
+                (Sensor ? GME : YM) : GMA;
         GME:
-            if (rst)
-                next_state <= INIT;
-            else
-            begin
-                if (extended_counter == 2)
-                begin
-                    next_state <= YM;
-                    
-                end
-                else
-                    next_state <= GME;
-            end
+            next_state <= (rst) ? INIT :
+                (extended_counter == 2) ? YM : GME;
         WALK:
-            if (rst)
-                next_state <= INIT;
-            else
-            begin
-                if (walk_counter == 2)
-                begin
-                    next_state <= GS;
-                    WalkPressed <= 0; 
-                    walk_on <= 0;
-                end
-                else
-                    next_state <= WALK;
-            end
+            next_state <= (rst) ? INIT :
+                (walk_counter == 2) ? GS : WALK;
         default:
             next_state <= next_state;
     endcase
 end
 
-always @(posedge seconds_clk) 
+// Update current state on rising edge of seconds clock
+always @(posedge seconds_clk)
 begin
     if (rst)
-    begin
-        cur_state <= INIT;     
-    end
+        cur_state <= INIT;
     else
         cur_state <= next_state;
 end
 
+// Update counters based on current state
 always @(posedge seconds_clk)
 begin
     if (rst)
@@ -238,109 +150,80 @@ begin
     else
     begin
         case (cur_state)
-            GMI:
-            begin
+            GMI: begin
                 init_counter <= init_counter + 1;
                 green_counter <= 0;
                 yellow_counter <= 0;
                 extended_counter <= 0;
                 walk_counter <= 0;
             end
-            YM:
-            begin
+            YM: begin
                 yellow_counter <= yellow_counter + 1;
                 init_counter <= 0;
                 green_counter <= 0;
                 extended_counter <= 0;
                 walk_counter <= 0;
             end
-            WALK:
-            begin
+            WALK: begin
                 walk_counter <= walk_counter + 1;
                 init_counter <= 0;
                 green_counter <= 0;
                 extended_counter <= 0;
                 yellow_counter <= 0;
-                WalkPressed <= 0; 
+                WalkPressed <= 0;
                 walk_on <= 0;
             end
-            GS:
-            begin
+            GS: begin
                 green_counter <= green_counter + 1;
                 yellow_counter <= 0;
                 extended_counter <= 0;
                 walk_counter <= 0;
-                init_counter <= 0;                    
+                init_counter <= 0;
             end
-            GSE:
-            begin
+            GSE: begin
                 extended_counter <= extended_counter + 1;
                 green_counter <= 0;
                 yellow_counter <= 0;
                 init_counter <= 0;
                 walk_counter <= 0;
             end
-            YS:
-            begin
+            YS: begin
                 yellow_counter <= yellow_counter + 1;
                 green_counter <= 0;
                 walk_counter <= 0;
                 init_counter <= 0;
                 extended_counter <= 0;
             end
-            GMA:
-            begin
+            GMA: begin
                 green_counter <= green_counter + 1;
                 yellow_counter <= 0;
                 extended_counter <= 0;
                 walk_counter <= 0;
                 init_counter <= 0;
             end
-            GME:
-            begin
+            GME: begin
                 extended_counter <= extended_counter + 1;
                 green_counter <= 0;
                 yellow_counter <= 0;
                 init_counter <= 0;
-                walk_counter <= 0;                
+                walk_counter <= 0;
             end
-            default:
-            begin
+            default: begin
                 init_counter <= 0;
                 green_counter <= 0;
                 yellow_counter <= 0;
                 walk_counter <= 0;
-                extended_counter <= 0; 
-            end   
+                extended_counter <= 0;
+            end
         endcase
     end
 end
 
-//output
+// Output logic based on current state
 always @(*)
 begin
     case (cur_state)
-        GMI:
-        begin
-            Gm <= 1;
-            Ym <= 0;
-            Rm <= 0;
-            Gs <= 0;
-            Ys <= 0;
-            Rs <= 1;
-            WalkLamp <= 0;
-        end
-        GME:
-        begin
-            Gm <= 1;
-            Ym <= 0;
-            Rm <= 0;
-            Gs <= 0;
-            Ys <= 0;
-            Rs <= 1;
-            WalkLamp <= 0;
-        end
-        GMA:
+        GMI, GME, GMA:
         begin
             Gm <= 1;
             Ym <= 0;
@@ -360,17 +243,7 @@ begin
             Rs <= 1;
             WalkLamp <= 0;
         end
-        GS:
-        begin
-            Gm <= 0;
-            Ym <= 0;
-            Rm <= 1;
-            Gs <= 1;
-            Ys <= 0;
-            Rs <= 0;
-            WalkLamp <= 0;
-        end
-        GSE:
+        GS, GSE:
         begin
             Gm <= 0;
             Ym <= 0;
