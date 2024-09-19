@@ -2,52 +2,52 @@
 
 ## Overview
 
-This project implements a Rock-Paper-Scissors game using an FPGA, with user inputs read from a keypad and processed on the FPGA. The system plays against a simulated PC opponent, and the results of each round are displayed through serial output. The game logic and input handling are designed using Verilog and C, demonstrating a practical application of FPGA capabilities.
+This project demonstrates a Rock-Paper-Scissors game implemented on an FPGA, integrating user input from a keypad and processing it in real-time. The FPGA interacts with a simulated PC opponent, and results are displayed through serial output. This project leverages Verilog for hardware design and C for game logic, highlighting the practical application of FPGA technology in game development.
 
 ## Key Design Aspects
 
 ### Input Handling
 
-- **Keypad Input**: Reads user input from a keypad using GPIO. Each key corresponds to a specific action in the game.
-- **PC Input**: Reads input from the console to simulate the PC's move. The valid inputs are '1', '2', and '3', representing Rock, Paper, and Scissors respectively.
+- **Keypad Interaction**: Users input their choices via a keypad, with each key representing Rock, Paper, or Scissors. This setup allows for an engaging physical interaction with the game.
+- **PC Simulation**: The game simulates a PC opponent’s choices using console input, adding an element of unpredictability and challenge.
 
 ### Game Logic
 
-- **Comparison Logic**: Determines the winner between the FPGA and PC based on the game rules:
+- **Outcome Determination**: Implements classic game rules:
   - Rock beats Scissors
-  - Scissors beats Paper
+  - Scissors beat Paper
   - Paper beats Rock
-- **Output**: Displays the result of each round on the serial console using `xil_printf`.
+- **Feedback System**: Results are communicated instantly via serial output, providing immediate feedback and enhancing the user experience.
 
 ### GPIO Configuration
 
-- **Initialization**: Configures GPIOs for keypad input and internal communication. The GPIOs are initialized to manage both column and row signals of the keypad.
+- **Initialization**: Configures GPIOs to handle keypad inputs and internal signaling. Ensures robust and reliable input reading.
 
 ## Implementation Details
 
-- **Keypad Reading**: Utilizes GPIO functions to read the state of the keypad and determine which key has been pressed.
-- **Game Execution**: The main loop continuously prompts for user input and compares it with a simulated PC move. Results are printed to the serial console.
+- **User Input Handling**: Uses GPIO functions to read and interpret keypad inputs, ensuring accurate and responsive game interaction.
+- **Game Execution Loop**: Continuously processes user and PC inputs, compares them, and displays the result, demonstrating effective real-time game processing.
 
 ### Main Functions
 
-- **`initialize()`**: Sets up GPIO devices and configures the direction for each GPIO pin.
-- **`readKey()`**: Reads the state of the keypad to determine which key is pressed.
-- **`takeInput()`**: Reads input from the console to simulate the PC's move.
-- **`takeInputKeypad()`**: Reads input from the keypad and returns the corresponding value.
+- **`initialize()`**: Sets up GPIO devices, crucial for reliable input handling.
+- **`readKey()`**: Detects which key is pressed on the keypad, a key part of the user interaction.
+- **`takeInput()`**: Reads the PC’s move from the console, simulating AI behavior.
+- **`takeInputKeypad()`**: Captures user input from the keypad, translating physical actions into game decisions.
 
 ## Unique Approach
 
-Our project demonstrates the integration of FPGA hardware with software logic for a simple game application. Key features include:
+This project integrates hardware and software to create a simple yet interactive game experience, showcasing:
 
-- **Hardware-Software Integration**: The game leverages both FPGA hardware for keypad handling and C software for game logic and serial communication.
-- **Real-Time Interaction**: Provides immediate feedback and results based on user input and simulated PC moves.
+- **Interactive Design**: Combines physical input (keypad) with software logic for a tactile gaming experience.
+- **Hardware-Software Synergy**: Demonstrates how FPGA technology can be used to handle real-time inputs and outputs in a game setting.
+- **Immediate Feedback**: Provides instant game results, enhancing player engagement and satisfaction.
 
 ## Challenges & Solutions
 
-- **Keypad Debouncing**: Ensured stable reading of keypad input by managing GPIO states and debouncing signals.
-- **PC Input Simulation**: Implemented a method to simulate random moves from the PC and handle user inputs seamlessly.
+- **Keypad Debouncing**: Implemented strategies to ensure accurate and stable input readings, improving game reliability.
+- **Simulated PC Moves**: Developed a method to simulate a variety of PC moves, adding depth to the gameplay experience.
 
 ## Conclusion
 
-This Rock-Paper-Scissors FPGA project highlights the practical application of FPGA technology for real-time game logic and user interaction. By combining GPIO handling with game logic implemented in C, the project demonstrates effective use of FPGA capabilities in a straightforward and engaging application.
-
+The Rock-Paper-Scissors FPGA project highlights the use of FPGA technology to create an engaging and interactive game. By blending hardware design with game logic, it demonstrates your ability to integrate complex systems and deliver immediate, real-time feedback—key skills in game design and development.
